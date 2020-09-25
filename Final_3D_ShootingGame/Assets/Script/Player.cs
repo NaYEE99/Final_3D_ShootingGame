@@ -26,6 +26,7 @@ public class Player : MonoBehaviour
     private Animator ani;       // 抓取動畫控制器用
     private AudioSource aud;    // 抓取音源用
     private Transform cam;      // 設定攝影機根物件 座標資訊
+    private NPC npc;            // 抓取 NPC 類型用
 
 
     // 使此欄位在屬性面板上隱藏
@@ -39,7 +40,9 @@ public class Player : MonoBehaviour
 
     // 欄位區域結束
     #endregion
+
     //＝＝＝＝＝＝＝＝＝＝＞ 分隔線 say Hi~ (OwO) ＜
+   
     #region 事件區域
 
     private void Awake()
@@ -47,6 +50,8 @@ public class Player : MonoBehaviour
         rig = GetComponent<Rigidbody>();    // 抓取物件上的 鋼體
         ani = GetComponent<Animator>();     // 抓取物件上的 動畫控制器
         cam = GameObject.Find("主攝影機").transform;  // 在場景直接搜尋("")中的物件
+
+        npc = FindObjectOfType<NPC>();      // 尋找 NPC 類型
     }
 
     private void Update()
@@ -65,7 +70,9 @@ public class Player : MonoBehaviour
 
     // 事件區域結束
     #endregion
+
     //＝＝＝＝＝＝＝＝＝＝＞ 分隔線 OTZ ＜
+
     #region 方法區域
 
     /// <summary>
@@ -124,6 +131,8 @@ public class Player : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Mouse0))
         {
             ani.SetTrigger("攻擊觸發");
+
+            
         }
     }
 
@@ -132,7 +141,7 @@ public class Player : MonoBehaviour
     /// </summary>
     private void GetHit()
     {
-
+        
     }
 
     /// <summary>
@@ -140,7 +149,7 @@ public class Player : MonoBehaviour
     /// </summary>
     private void Dead()
     {
-
+        if (hp <= 0) ani.SetBool("死亡開關", true);     // 當 HP > = 0 時，觸發死亡開關
     }
 
     /// <summary>
@@ -148,6 +157,10 @@ public class Player : MonoBehaviour
     /// </summary>
     public void Skill()
     {
+        // 粒子效果：職業技能
+        // 消除：光汙染
+        // 消除：暗汙染
+
 
     }
 
@@ -156,51 +169,73 @@ public class Player : MonoBehaviour
     /// </summary>
     public void RestoreHP()
     {
-
+        // 增加 HP
+        // 更新 Bar條
     }
-
     /// <summary>
     /// 停止回血：取消光祝福更新、清空計數器
     /// </summary>
     private void StopResHP()
     {
-
+        // 停止RHP
     }
 
     /// <summary>
     /// 暗祝福：觸發攻擊力上升、設定攻擊力為( 1.5/2 倍)、計數器 ++ (max = 2)
     /// </summary>
-    private void AttackUP()
+    public void AttackUP()
     {
-
+        // 增加 attack 傷害值
     }
-
     /// <summary>
     /// 停止增傷：取消暗祝福更新、清空計數器
     /// </summary>
     private void StopAttackUP()
     {
-
+        // 停止增傷
     }
+
+    /// <summary>
+    /// 光汙染：使 HP 每秒 -5
+    /// </summary>
+    private void LPollution()
+    {
+        // HP = HP-5
+    }
+    /// <summary>
+    /// 暗汙染：直接觸發 Dead，結束遊戲
+    /// </summary>
+    private void DPollution()
+    {
+        // if(time >= 20) Dead();
+    }
+
 
 
     /// <summary>
     /// 碰觸到任務道具時，消除道具，計數器+1
     /// </summary>
-    /// <param name="collision">標籤為：能量罐罐</param>
-    private void OnCollisionEnter(Collision collision)
+    /// <param name="collision">標籤為：光結晶</param>
+    private void OnCollisionEnter(Collision LightCrystal)  // 當碰撞器進入時，帶入參數
     {
-        if (collision.gameObject.tag == "光結晶") GetProp(collision.gameObject);
+        if (LightCrystal.gameObject.tag == "光結晶") GetProp(LightCrystal.gameObject);
+        // 如果 碰撞器標籤 == "光結晶"，觸發 獲取物品
+        
+        //if (LightCrystal.gameObject.tag == "暗結晶") GetProp(DarkCrystal.gameObject);
+        // 如果 碰撞器標籤 == "暗結晶"，觸發 獲取物品
     }
 
     /// <summary>
-    /// 獲取物品：消除物品、更新 NPC計數器
+    /// 獲取光結晶：消除物品、更新 NPC計數器
     /// </summary>
     /// <param name="prop">光結晶</param>
     private void GetProp(GameObject prop)
     {
-        Destroy(prop);
+        Destroy(prop);  // 指定 prop 為物件，碰到時即刪除物件
         //aud.PlayOneShot(soundProp);
+        npc.UpdateTextLCrys();      // 更新計數
+        npc.UpdateTextDCrys();      // 更新計數
+
         //npc.UpdateTextMission();
     }
 

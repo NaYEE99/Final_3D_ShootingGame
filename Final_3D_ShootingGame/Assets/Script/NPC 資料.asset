@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: "NPC \u8CC7\u6599"
   m_EditorClassIdentifier: 
   _NPCState: 0
-  lCrys: 0
-  dCrys: 0
+  lCrys: 5
+  dCrys: 5
   dialogs:
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - "\u4EFB\u52D9\u4E2D"
+  - "\u5149\u6C59\u67D3\u958B\u555F"
+  - "\u6697\u6C59\u67D3\u958B\u555F"
+  - "\u5149\u795D\u798F\u958B\u555F"
+  - "\u6697\u795D\u798F\u958B\u555F"
+  - "\u4EFB\u52D9\u5931\u6557"
+  - "\u4EFB\u52D9\u6210\u529F"
