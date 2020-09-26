@@ -107,7 +107,7 @@ public class NPC : MonoBehaviour
     {
         lCrys++;    // 每次獲得+1
 
-        if (lCrys >= 5) player.RestoreHP();     // 當 光結晶 > = 5 時，觸發回血效果
+           // 當 光結晶 > = 5 時，觸發回血效果
         // 觸發回血動畫 2D? 3D?
 
         textLCrys.text = " " +lCrys + " / " + data.lCrys;    // 使文字更新 = 當前數量 / data需求
@@ -122,7 +122,7 @@ public class NPC : MonoBehaviour
     {
         dCrys++;    // 每次獲得+1
 
-        if (dCrys >= 5) player.AttackUP();      // 當 暗結晶 > = 5 時，觸發傷害提升
+          // 當 暗結晶 > = 5 時，觸發傷害提升
         // 觸發增傷動畫 2D> 3D?
 
         textDCrys.text = " " + dCrys + " / " + data.dCrys;    // 使文字更新 = 當前數量 / data需求

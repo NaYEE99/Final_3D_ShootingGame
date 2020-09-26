@@ -1,25 +1,38 @@
-﻿
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.UI;
+using System.Collections;
+
 
 public class Player : MonoBehaviour
 {
     // 第一人稱用
 
     #region 欄位區域
-    [Header("速度"), Range(0, 10f)]
+    [Header("移動速度"), Range(0, 10f)]
     public float speed = 1;
     [Header("旋轉速度"), Range(0, 5)]
     public float turn = 1;
     [Header("血量"), Range(0, 200)]
     public float hp = 100;
+    [Header("最大血量"), Range(0, 200)]
+    public float maxHp = 100;
     [Header("攻擊值"), Range(0, 100)]
     public float attack = 33;
+    [Header("倒數時間"), Range(0, 200)]
+    public float missionTime = 120;
+    public float maxMissionTime = 120;     // 任務時間最大值
 
 
     [Header("白結晶"), Range(0, 5)]
     public int lCrys = 0;           // 預設上限為5
     [Header("暗結晶"), Range(0, 5)]
     public int dCrys = 0;           // 預設上限為5
+
+    
+    [Header("介面區塊")]
+    public Image barHP;     // 血量Bar條更新
+    public Image barTime;   // 倒數時間
+
 
 
     private Rigidbody rig;      // 抓取剛體用 
@@ -55,13 +68,22 @@ public class Player : MonoBehaviour
     }
 
     private void Update()
-    {
+    {   // 無物理運算可以放這
+        Attack();
+        Skill();
         
+
     }
 
     private void FixedUpdate()
     {
-        if(stop == true) return;    // 假設stop啟用，則跳過移動。
+
+
+        MissionTime();
+
+
+
+        if (stop == true) return;    // 假設stop啟用，則跳過移動。
 
         Move();     // 更新移動
         
@@ -132,16 +154,21 @@ public class Player : MonoBehaviour
         {
             ani.SetTrigger("攻擊觸發");
 
-            
         }
     }
 
     /// <summary>
     /// 玩家受傷：觸發受傷動畫、玩家扣血
     /// </summary>
-    private void GetHit()
+    public void GetHit(float damage, Transform direction)
     {
-        
+        hp -= damage;                   // 玩家 HP 遞減 傷害量
+        ani.SetTrigger("受傷觸發");     // 觸發受傷動畫
+        rig.AddForce(direction.forward * 10 + direction.up * 5);       // 控制 Player.rig 被打擊退+擊飛
+
+        hp = Mathf.Clamp(hp, 0, 1000);  // 限制血量在 0~1000
+        barHP.fillAmount = hp / maxHp;  // 更新血條
+        if (hp == 0) Dead();            // 如果 HP = 0，觸發死亡
     }
 
     /// <summary>
@@ -150,6 +177,7 @@ public class Player : MonoBehaviour
     private void Dead()
     {
         if (hp <= 0) ani.SetBool("死亡開關", true);     // 當 HP > = 0 時，觸發死亡開關
+        this.enabled = false;   // 死亡時關閉腳本
     }
 
     /// <summary>
@@ -157,42 +185,64 @@ public class Player : MonoBehaviour
     /// </summary>
     public void Skill()
     {
-        // 粒子效果：職業技能
-        // 消除：光汙染
-        // 消除：暗汙染
+        if (Input.GetKeyDown(KeyCode.E))
+        { 
+            // 粒子效果：職業技能
+            // 消除：光汙染
+            // 消除：暗汙染
+            if (npc.lCrys >= 5)
+            {
+                npc.lCrys = npc.lCrys - 5;          // 消費5結晶
+                InvokeRepeating("RestoreHP", 0, 1); // 開啟回血
+                missionTime -= 20;
+            }
+            if (npc.dCrys >= 5)
+            {
+                npc.dCrys = npc.dCrys - 5;          // 消費5結晶
+                InvokeRepeating("AttackUP", 0, 1);  // 提升攻擊力
+                missionTime -= 20;
+            }
 
-
+        }
     }
 
     /// <summary>
-    /// 光祝福：觸發回血、設定回復量為定值(可*2)、計數器 ++ (max = 2)
+    /// 光祝福：觸發回血、設定回復量
     /// </summary>
     public void RestoreHP()
     {
-        // 增加 HP
-        // 更新 Bar條
+        hp += 5;                   // 增加 HP
+        barHP.fillAmount = hp / maxHp;  // 更新 Bar條
+        // 粒子效果：回血
+        Invoke("StopResHP", 8);
     }
     /// <summary>
     /// 停止回血：取消光祝福更新、清空計數器
     /// </summary>
     private void StopResHP()
     {
-        // 停止RHP
+        CancelInvoke("RestoreHP");  // 停止RHP
     }
 
     /// <summary>
-    /// 暗祝福：觸發攻擊力上升、設定攻擊力為( 1.5/2 倍)、計數器 ++ (max = 2)
+    /// 暗祝福：觸發攻擊力上升、設定攻擊力
     /// </summary>
     public void AttackUP()
     {
-        // 增加 attack 傷害值
+
+        attack = attack + 50;       // 增加 attack 傷害值
+        // 增加技能層數
+        Invoke("StopAttackUP", 8);      // 延遲8秒後消除BUFF  
+        // 粒子效果：增傷
+   
     }
     /// <summary>
     /// 停止增傷：取消暗祝福更新、清空計數器
     /// </summary>
     private void StopAttackUP()
     {
-        // 停止增傷
+        Invoke("StopAttackUP", 8);
+        attack = 33;                // 回歸攻擊力
     }
 
     /// <summary>
@@ -200,44 +250,102 @@ public class Player : MonoBehaviour
     /// </summary>
     private void LPollution()
     {
-        // HP = HP-5
+        hp -= 3;    // HP = HP-3
+        // 粒子效果：光汙染
     }
     /// <summary>
     /// 暗汙染：直接觸發 Dead，結束遊戲
     /// </summary>
     private void DPollution()
     {
-        // if(time >= 20) Dead();
+        if(missionTime >= 0) Dead();
+        // aud.死亡音效
     }
 
+    /// <summary>
+    /// 更新結束時間
+    /// </summary>
+    private void MissionTime()
+    {
+        missionTime -= 1;   // 每秒
+        barTime.fillAmount = missionTime / maxMissionTime;
+    }
+
+
+    /// <summary>
+    /// 碰觸到怪物時，造成傷害
+    /// </summary>
+    /// <param name="other"></param>
+    private void OnTriggerEnter(Collider other)
+    {
+        // 碰到白敵人時
+        if (other.tag == "敵人-白")
+        {
+            other.GetComponent<Enemy>().GetHit(attack, transform);
+        }
+        // 碰到黑敵人時
+        if (other.tag == "敵人-黑")
+        {
+            other.GetComponent<Enemy>().GetHit(attack, transform);
+        }
+
+
+
+    }
 
 
     /// <summary>
     /// 碰觸到任務道具時，消除道具，計數器+1
     /// </summary>
     /// <param name="collision">標籤為：光結晶</param>
-    private void OnCollisionEnter(Collision LightCrystal)  // 當碰撞器進入時，帶入參數
+    private void OnCollisionEnter(Collision collision)  // 當碰撞器進入時，帶入參數
     {
-        if (LightCrystal.gameObject.tag == "光結晶") GetProp(LightCrystal.gameObject);
         // 如果 碰撞器標籤 == "光結晶"，觸發 獲取物品
-        
-        //if (LightCrystal.gameObject.tag == "暗結晶") GetProp(DarkCrystal.gameObject);
+        if (collision.gameObject.tag == "光結晶")
+        {
+            GetLCrys(collision.gameObject);
+
+        }
+
         // 如果 碰撞器標籤 == "暗結晶"，觸發 獲取物品
+        if (collision.gameObject.tag == "暗結晶")
+        {
+            GetDCrys(collision.gameObject);
+
+
+        }
     }
 
     /// <summary>
     /// 獲取光結晶：消除物品、更新 NPC計數器
     /// </summary>
     /// <param name="prop">光結晶</param>
-    private void GetProp(GameObject prop)
+    private void GetLCrys(GameObject prop)
     {
         Destroy(prop);  // 指定 prop 為物件，碰到時即刪除物件
+        
         //aud.PlayOneShot(soundProp);
+        
         npc.UpdateTextLCrys();      // 更新計數
+
+        //npc.UpdateTextMission();
+    }
+    /// <summary>
+    /// 獲取暗結晶：消除物品、更新 NPC計數器
+    /// </summary>
+    /// <param name="prop">暗結晶</param>
+    private void GetDCrys(GameObject prop)
+    {
+        Destroy(prop);  // 指定 prop 為物件，碰到時即刪除物件
+        
+        //aud.PlayOneShot(soundProp);
+      
         npc.UpdateTextDCrys();      // 更新計數
 
         //npc.UpdateTextMission();
     }
+
+
 
 
 
